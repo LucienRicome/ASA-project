@@ -270,16 +270,14 @@ model_final = multinom(association$association~.,asso.selected.no.sand)
 
 vif(model_final) 
 ```
-
+Désormais, mode_final ne présentente pas de soucis de multicollinéarité. Nous allons l'utiliser pour réaliser de la prédiction de classe.
 
 ## Prédictions
 ```{r}
-
-proba = predict(levrai, newdata = data.frame(asso.selected.no.sand), type="class")
+proba = predict(model_final, newdata = data.frame(asso.selected.no.sand), type="class")
 confusion = table(association$association,proba,dnn=list("Observed","Predicted"))
 confusion
 
 ## il faudrait la mettre en couleur mais j'ai pas trouvé...
 
 ```
-
