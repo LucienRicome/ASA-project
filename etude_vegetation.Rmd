@@ -9,14 +9,15 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Introduction
+# Introduction
 
-Une petite mise en contexte :)
-C'est ou la plaine du Mafragh, y a quel type de plantes ? Pourquoi relier sol et plantes c'est pertienent...
+Une petite mise en contexte
+Ou se situe la plaine du Mafragh ? Quelle est la végétation associée ? Pourquoi relier sol et plantes est pertinent...
 
-## Packages
 
-```{r cars}
+## Chargement des packages
+
+```{r cars, include=FALSE}
 library(readxl)
 #libraries for time series analyses
 library(nlme)      #glm and gls
@@ -44,33 +45,36 @@ require(regclass)
 require(car)
 ```
 
-## Préparation des données
+## Chargement des données
 
-Trouver un moyen pour le fichier 
-```{r pressure, echo=FALSE}
-file_path = "C:/Users/ansal/Documents/MODE/ASA/data_vegetation_french.xls"
+```{r pressure, include=FALSE}
+file_path = "data_vegetation_french.xls"
 
 flo = read_excel(file_path, sheet = "flo")
 mil = read_excel(file_path, sheet = "mil", col_types = 'numeric')
 coord = read_excel(file_path, sheet = "coord", col_types = 'numeric')
 association = read_excel(file_path, sheet = "association")
-```
-## Exploration du jeu de données 
 
-#Représentation spaciale
+flo_mil = cbind(flo, mil)
+```
+
+# Exploration du jeu de données 
+
+## Représentation spaciale
+
 virer xy et mettre coord partout(c'est une colonne du jeu de donnée !)
 ```{r}
-xy = coord
-plot(xy)
-coord.knear4 = knearneigh(as.matrix(xy),4) #to extract the neighbour points
+coord
+plot(coord)
+coord.knear4 = knearneigh(as.matrix(coord),4) #to extract the neighbour points
 knn2nb(coord.knear4)
-plot(knn2nb(coord.knear4), xy, add=TRUE)
+plot(knn2nb(coord.knear4), coord, add=TRUE)
 
 
-ade4::s.label(xy, ylim=c(min(coord[,1])-50, max(coord[,1])+50) ,xlim=c(min(coord[,2])-50,max(coord[,2])+50),  clabel=0.6,cpoint=1,neig=nb2neig(knn2nb(coord.knear4)))
+ade4::s.label(coord, ylim=c(min(coord[,1])-50, max(coord[,1])+50) ,xlim=c(min(coord[,2])-50,max(coord[,2])+50),  clabel=0.6,cpoint=1,neig=nb2neig(knn2nb(coord.knear4)))
 ```
 
-#Représentation des voisins --> on garde ou pas ? pas exploité par la suite...
+##Représentation des voisins --> on garde ou pas ? pas exploité par la suite...
 
 ```{r}
 #Gabriel :
@@ -100,56 +104,54 @@ s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
 ```
 
 ## Analyses préliminaires 
+### Test et standardization
+
+Avant de commencer l'analyse, il s'agit de tester l'homogénéité de la variance avec le test de Bartlett.
+Les données sont ensuite standardizées de la façon suivante :
+La transformation d'Hellinger est appliquée aux données floristiques.
+Les données pédologique (mil) sont centrées et réduite car les unités des variables ne sont pas identiques.
 
 ```{r}
-
-####check normality and homoscedasticity
-#Bartlett's test is used to test the null hypothesis,H0, that all k population variances are equal, against the alternative that at least two are different.
-#test samples to see for homogeneity of variance (homoscedasticity)
-bartlett.test(flo) #the null hypothesis is that all populations variances are equal; the alternative hypothesis is that at least two of them differ.
+bartlett.test(flo)
 #pas de normalité car rejet de l'HP de normalité avec la normalité avec la pvalue
 
 #standardization methods : adapt to your own data
 flo <- decostand(flo, "hellinger") #package vegan
 mil= as.data.frame(scale(mil, center=TRUE, scale=TRUE))
-#transformation des données selon la transformation d'hellinger
-#mil : centré réduit car pas la même unité
 ```
+Le test de Barlett confirme que nous nous trouvons en situation d'homocédasticité.
 
-Test des corrélations entre variables
-Pour les données pédo :
-
+### Etude de la corrélation entre variables
+#### Pour les données pédologiques 
 ```{r}
 M <- cor(mil)
 par(mfrow=c(1,1))
 corrplot(M, method = "number")
-#quelques corrélation, par exemple Na+/Conduct, sable/argile
-#on vire conduct, 
-#les varibles seront ensuite selectionnée dans le ordistep, il restera à vérifier la corrélation.
-#pb entre Limon, Sable et Argile car les trois font 100% donc nécessité d'enlever une des trois
 ```
 
-Pour la flore 
+Il existe de rares corrélations entre variables, au seuil 0.7, Na+ est corrélé avec Conduct et Sable avec Argile.
+Ce résultat n'est pas surprenant, comme le limon, le sable et l'argile donnent la texture du sol, ces trois variables sont corrélées. 
+Pour le moment, toutes les varibales sont concervées. Il s'agira de vérifier s'il reste des corrélations dans les variables qui seront choisies lors de la création de modèle.
 
+#### Pour les données floristiques
 ```{r}
 M <- cor(flo)
 corrplot(M, method = "number",type="upper") #pas de corrélation entre les espece.
 ```
+Il n'y a pas de corrélation entre les différentes espèces.
 
-Pour les deux !!
-
+#### Etudes des corrélations entre les données floristiques et pédologiques
 ```{r}
-M <- cor(tabdoubs)
+M <- cor(flo_mil)
 corrplot(M, method = "square")  #ni entre esp et envrnt
 ```
+Pas de corrélation entre les espèces et des données pédologiques.
 
-CONCLUSIONS des analyses préliminaires :
-==> Quand trop de variables, on peut choisir les meilleures par "dire d'expert" càd que le chercheur sait qu'elle soit les meilleurs variables pour sa question
+Ces analyses préliminaires nous ont montrées que nous faisons face à de grands tableaux de valeurs mais présentant peu de corrélations entre variables. 
+Par la suite, nous allons nous pencher sur la corrélation spaciale
 
-Des grands tableaux, peu de corrélation entre variables, ordistep puis vif. 
-on va tester la corrélation spaciale 
 
-## Autocorrélation spaciale 
+## Etude de l'autocorrélation spaciale 
 
 ```{r}
 geo = dist(xy)
@@ -165,7 +167,8 @@ r1 ##Significatif donc réelle autocorrelation spatiale, pvalue = 0.02 !
 plot(r1, main = "Mantel's test")
 ```
 
-## Selection des variables pertinentents
+# Etude statistique
+## Selection des variables pertinententes
 
 ```{r}
 
@@ -188,7 +191,7 @@ selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE)) #c'est mil2
 # test#all good
 ```
 
-Partitionnement de variance 
+## Partitionnement de variance 
 
 ```{r}
 #Partition of the Variation of Community with mil and space (xy)
@@ -203,7 +206,7 @@ plot(mod, bg=2:5) #on n'expliquera que 9% de la variance, on a
 
 ```
 
-## PCCA 
+## Principal Component Correspondence Analysis 
 
 ```{r}
 #perform a partial CCA with space removing
@@ -236,35 +239,40 @@ text(ccap, dis="cn",col="black",cex = 1)
 text(ccap, "species", col="blue", cex=0.8)
 ```
 
-## Création d'un modèle à vocation prédictive pour la classe de Association
+
+# Création d'un modèle à vocation prédictive pour la classe de Association
+## Selection du meilleur modèle
 
 ```{r}
-asso.mlogit = multinom(association$association~.,mil)
-asso = multinom(association$association~1,mil)
+asso.mlogit = multinom(association$association~.,mil) #modèle multinomial complet
+asso = multinom(association$association~1,mil) #modèle multinomial null
 beta = coef(asso.mlogit)
-beta 
 
 model = step(asso, direction = "both", scope = formula(asso.mlogit))
+```
 
+Grace à la selection du meilleur modèle, obtenu en minimisant l'AIC, on s'arrête sur les variables K+, Altitude, Capa_Reten et Sable.
+```{r}
 asso.selected = mil[, c("K+", "Altitude",  "Capa_Reten", "Sable")]
 asso.select.mlogit = multinom(association$association~.,asso.selected)
-
-vif(asso.select.mlogit) #oh fuck sable is 1933 !!! remove it !
 ```
-Avec le bon modèle :
 
+On vérifie la multicollinéarité :
 ```{r}
-
+vif(asso.select.mlogit)
+```
+La valeur du VIF pour la variable Sable s'élève à 1933, c'est beaucoup trop ! Il s'agira d'enlever cette variable :
+```{r}
 asso.selected.no.sand = mil[, c("K+", "Altitude",  "Capa_Reten")]
 asso.selected.no.sand$K = asso.selected.no.sand$"K+"
 asso.selected.no.sand = asso.selected.no.sand[-1]
-levrai = multinom(association$association~.,asso.selected.no.sand)
+model_final = multinom(association$association~.,asso.selected.no.sand)
 
-vif(levrai) #goood
+vif(model_final) 
 ```
 
-Prédictions :
 
+## Prédictions
 ```{r}
 
 proba = predict(levrai, newdata = data.frame(asso.selected.no.sand), type="class")
