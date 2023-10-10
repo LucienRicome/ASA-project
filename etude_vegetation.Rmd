@@ -1,0 +1,277 @@
+---
+title: "Etude de la végétation de Mafragh"
+author: "Aldric, Baptiste, Jeanne, Lucien, Lucile"
+date: "2023-10-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Une petite mise en contexte :)
+C'est ou la plaine du Mafragh, y a quel type de plantes ? Pourquoi relier sol et plantes c'est pertienent...
+
+## Packages
+
+```{r cars}
+library(readxl)
+#libraries for time series analyses
+library(nlme)      #glm and gls
+library(tidyverse) # for data cleaning, ordering, etc.
+
+#libraries for spatial series analyses
+library(spdep) #to extracted the neighbors is a spatial data
+library(ade4)  #used for plotting spatial data
+library(spatialreg) #used for spatial data modelling
+library(gwrr)  #to run geographically weighted regression
+library(ade4)
+library(vegan)
+library("ggplot2")
+library("factoextra")
+library(corrplot)
+library(RVAideMemoire)
+library("PerformanceAnalytics")
+library(readxl)
+
+require(questionr)
+require(nnet)
+require(aod)
+
+require(regclass)
+require(car)
+```
+
+## Préparation des données
+
+Trouver un moyen pour le fichier 
+```{r pressure, echo=FALSE}
+file_path = "C:/Users/ansal/Documents/MODE/ASA/data_vegetation_french.xls"
+
+flo = read_excel(file_path, sheet = "flo")
+mil = read_excel(file_path, sheet = "mil", col_types = 'numeric')
+coord = read_excel(file_path, sheet = "coord", col_types = 'numeric')
+association = read_excel(file_path, sheet = "association")
+```
+## Exploration du jeu de données 
+
+#Représentation spaciale
+virer xy et mettre coord partout(c'est une colonne du jeu de donnée !)
+```{r}
+xy = coord
+plot(xy)
+coord.knear4 = knearneigh(as.matrix(xy),4) #to extract the neighbour points
+knn2nb(coord.knear4)
+plot(knn2nb(coord.knear4), xy, add=TRUE)
+
+
+ade4::s.label(xy, ylim=c(min(coord[,1])-50, max(coord[,1])+50) ,xlim=c(min(coord[,2])-50,max(coord[,2])+50),  clabel=0.6,cpoint=1,neig=nb2neig(knn2nb(coord.knear4)))
+```
+
+#Représentation des voisins --> on garde ou pas ? pas exploité par la suite...
+
+```{r}
+#Gabriel :
+
+veg.gab<-gabrielneigh(as.matrix(coord))
+# you can represent it spatially with this function:
+#s.label(coord,clabel=.5, cpoint=.1,neig=nb2neig(graph2nb(veg.gab)))
+
+#Delaunay :
+veg.tri<-tri2nb(coord)
+# graphic representation:
+#s.label(coord,clabel=0.6,cpoint=1,neig=nb2neig(veg.tri))
+# synthetic view:
+veg.tri
+
+#Distance
+veg.dnear<-dnearneigh(as.matrix(coord),0,30) #here we specify that ponds are connected if they are appart from less than 30m
+# graphic representation:
+#s.label(coord,clabel=0.6, cpoint=1,neig=nb2neig(veg.dnear))
+# synthetic view:
+veg.dnear #in that specific case: the ponds 4 and 31 are not connected to any other pond
+
+par(mfrow=c(1,3))
+s.label(coord,clabel=0, cpoint=.1,neig=nb2neig(graph2nb(veg.gab))) 
+s.label(coord,clabel=0,cpoint=1,neig=nb2neig(veg.tri))
+s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
+```
+
+## Analyses préliminaires 
+
+```{r}
+
+####check normality and homoscedasticity
+#Bartlett's test is used to test the null hypothesis,H0, that all k population variances are equal, against the alternative that at least two are different.
+#test samples to see for homogeneity of variance (homoscedasticity)
+bartlett.test(flo) #the null hypothesis is that all populations variances are equal; the alternative hypothesis is that at least two of them differ.
+#pas de normalité car rejet de l'HP de normalité avec la normalité avec la pvalue
+
+#standardization methods : adapt to your own data
+flo <- decostand(flo, "hellinger") #package vegan
+mil= as.data.frame(scale(mil, center=TRUE, scale=TRUE))
+#transformation des données selon la transformation d'hellinger
+#mil : centré réduit car pas la même unité
+```
+
+Test des corrélations entre variables
+Pour les données pédo :
+
+```{r}
+M <- cor(mil)
+par(mfrow=c(1,1))
+corrplot(M, method = "number")
+#quelques corrélation, par exemple Na+/Conduct, sable/argile
+#on vire conduct, 
+#les varibles seront ensuite selectionnée dans le ordistep, il restera à vérifier la corrélation.
+#pb entre Limon, Sable et Argile car les trois font 100% donc nécessité d'enlever une des trois
+```
+
+Pour la flore 
+
+```{r}
+M <- cor(flo)
+corrplot(M, method = "number",type="upper") #pas de corrélation entre les espece.
+```
+
+Pour les deux !!
+
+```{r}
+M <- cor(tabdoubs)
+corrplot(M, method = "square")  #ni entre esp et envrnt
+```
+
+CONCLUSIONS des analyses préliminaires :
+==> Quand trop de variables, on peut choisir les meilleures par "dire d'expert" càd que le chercheur sait qu'elle soit les meilleurs variables pour sa question
+
+Des grands tableaux, peu de corrélation entre variables, ordistep puis vif. 
+on va tester la corrélation spaciale 
+
+## Autocorrélation spaciale 
+
+```{r}
+geo = dist(xy)
+
+chim = dist(scale(mil),method = "euclidian") #caclue de la distance entre les points 
+
+# the test used to correlate those two matrix is a Mantel test, it uses randomization of the values 
+#to have the expected distribution under H0
+# H0: the correlation between teh two matrix is null : there is no spatial autocorrelation
+r1 = mantel.rtest(geo,chim,nrepet=1000) 
+r1 ##Significatif donc réelle autocorrelation spatiale, pvalue = 0.02 !
+
+plot(r1, main = "Mantel's test")
+```
+
+## Selection des variables pertinentents
+
+```{r}
+
+###sélection des variables non redondantes (collinéarité)###
+rdadoubs=rda(flo~.,mil) #CCA 
+first=ordistep(rdadoubs,perm.max=500)
+first
+mil2=mil[,c("Mg++", "K+", "Capa_Reten", "Altitude")] #c'est le bon modèle, obtenu avec l'ordistep
+
+#allow to check which variables would be selected. Control if they are correlated ?
+#I propose to select :
+test=vif.cca(first) 
+test#problème (>10)
+# 
+# 
+# mil3=mil[,c("Limon","Argile",'Mg++','K+',"Capa_Reten","Altitude")]
+selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE)) #c'est mil2
+# rdadoubs3=rda(flo~.,mil3)
+# test=vif.cca(rdadoubs3) 
+# test#all good
+```
+
+Partitionnement de variance 
+
+```{r}
+#Partition of the Variation of Community with mil and space (xy)
+mod <- varpart(flo,mil,xy)
+mod
+plot(mod, bg=2:5) #on n'expliquera que 9% de la variance, on a 
+#conditionnel en vert, 0.07
+#mil = 0.09, c'est la partie de flo qui est expliqué par mil.
+#on a 0.07 de la variance de flo expliqué par xy
+#0.04 par l'interraction. 
+#on s'interesse à X1 seulement car on enlèe la dépendance spaciale.
+
+```
+
+## PCCA 
+
+```{r}
+#perform a partial CCA with space removing
+ccap=cca(flo,selected,xy,scan=F)
+#it should be noticed that the function rda and cca already center and scale the matrices
+ccap
+summary(ccap)
+
+#test the pCCA:
+anova.cca(ccap)
+
+ccap$CCA$v #coordonnées des especes sur les axes
+ccap$CCA$biplot #coordonnées des variables
+
+MVA.synt(ccap) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
+par(mfrow=c(1,2))
+plot(ccap,scaling=1)
+plot(ccap,scaling=2)
+goodness(ccap)
+
+
+#plot the pCCA
+par(mfrow=c(1,1))
+plot(ccap,scaling=1)
+plot(ccap, type="n")
+text(ccap, col="blue",cex = 0.75)
+text(ccap, dis="cn",col="black",cex = 1.2)
+plot(ccap, type="n")
+text(ccap, dis="cn",col="black",cex = 1)
+text(ccap, "species", col="blue", cex=0.8)
+```
+
+## Création d'un modèle à vocation prédictive pour la classe de Association
+
+```{r}
+asso.mlogit = multinom(association$association~.,mil)
+asso = multinom(association$association~1,mil)
+beta = coef(asso.mlogit)
+beta 
+
+model = step(asso, direction = "both", scope = formula(asso.mlogit))
+
+asso.selected = mil[, c("K+", "Altitude",  "Capa_Reten", "Sable")]
+asso.select.mlogit = multinom(association$association~.,asso.selected)
+
+vif(asso.select.mlogit) #oh fuck sable is 1933 !!! remove it !
+```
+Avec le bon modèle :
+
+```{r}
+
+asso.selected.no.sand = mil[, c("K+", "Altitude",  "Capa_Reten")]
+asso.selected.no.sand$K = asso.selected.no.sand$"K+"
+asso.selected.no.sand = asso.selected.no.sand[-1]
+levrai = multinom(association$association~.,asso.selected.no.sand)
+
+vif(levrai) #goood
+```
+
+Prédictions :
+
+```{r}
+
+proba = predict(levrai, newdata = data.frame(asso.selected.no.sand), type="class")
+confusion = table(association$association,proba,dnn=list("Observed","Predicted"))
+confusion
+
+## il faudrait la mettre en couleur mais j'ai pas trouvé...
+
+```
+
