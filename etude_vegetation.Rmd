@@ -193,52 +193,58 @@ selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE)) #c'est mil2
 
 ## Partitionnement de variance 
 
+On réalise un partionnement de variance pour étudier comment est distribuée la variance du tableau de comptage floristique en fonction des caractéristiques pédologiques du milieu et des cordonnées géographiques.
 ```{r}
-#Partition of the Variation of Community with mil and space (xy)
-mod <- varpart(flo,mil,xy)
-mod
-plot(mod, bg=2:5) #on n'expliquera que 9% de la variance, on a 
-#conditionnel en vert, 0.07
-#mil = 0.09, c'est la partie de flo qui est expliqué par mil.
-#on a 0.07 de la variance de flo expliqué par xy
-#0.04 par l'interraction. 
-#on s'interesse à X1 seulement car on enlèe la dépendance spaciale.
-
+partion_var <- varpart(flo,mil,coord)
+plot(partion_var, bg=2:5)
 ```
+Les données pédologiques expliquent 10% de la variance de la distribution floristique. 6% de cette variance sont expliqués par les coordonnées géographique. 
+L'interraction entre pédologie et géographie explique 4% de la variance du tableau de comptage des espèces végétales. 
+On constate que la majorité de la variance (80%) des espèces végétales n'est pas expliquée par les données dont nous disposons.
+Par la suite, nous allons exclure la dépendance spaciale en travaillant sur l'influence du milieu pédologique sur les communautés végétales en réalisant une Analyses des Correspondances en Composantes Principales.
+
+--> Mettre des légendes au graph au lieu de X1 et X2, écrire Milieu et Spacial...
 
 ## Principal Component Correspondence Analysis 
 
+L'Analyses des Correspondances en Composantes Principales est réalisée avec le package Vegan.
 ```{r}
-#perform a partial CCA with space removing
-ccap=cca(flo,selected,xy,scan=F)
-#it should be noticed that the function rda and cca already center and scale the matrices
-ccap
-summary(ccap)
+ccap_flo=cca(flo,selected,coord,scan=F)
+ccap_flo
+```
+L'inertie totale du tableau de comptage floristique s'élève à 8.3. 9% de cette inertie est expliquée par les coordonnées géographiques et 9% par les données pédologiques du milieu. C'est donc 80% de l'inertie qui n'est pas expliquée par les tables de valeur dont nous disposons.
 
-#test the pCCA:
-anova.cca(ccap)
+Le premier axe représente 50% (0.35/0.7) de la variance expliquée par le milieu pédologique et 4% de la variance totale de la distribution floristique. 
 
-ccap$CCA$v #coordonnées des especes sur les axes
-ccap$CCA$biplot #coordonnées des variables
+La pCCA est testée à l'aide d'une anova :
+```{r}
+anova.cca(ccap_flo)
+```
+Les résultats de la pCCA sont significatifs (pvalue = 0.001).
 
-MVA.synt(ccap) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
-par(mfrow=c(1,2))
-plot(ccap,scaling=1)
-plot(ccap,scaling=2)
-goodness(ccap)
+```{r}
+#ccap_flo$CCA$v #coordonnées des especes sur les axes
+ccap_flo$CCA$biplot #coordonnées des variables
 
+#MVA.synt(ccap_flo) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
+#par(mfrow=c(1,2))
+#plot(ccap_flo,scaling=2)
+#goodness(ccap_flo)
 
+```
+L'altitude est fortement corrélée négativement au premier axe. La capacité de rétention est fortement corrélée négativement au deuxième axe.
+
+```{r}
 #plot the pCCA
 par(mfrow=c(1,1))
-plot(ccap,scaling=1)
-plot(ccap, type="n")
-text(ccap, col="blue",cex = 0.75)
-text(ccap, dis="cn",col="black",cex = 1.2)
-plot(ccap, type="n")
-text(ccap, dis="cn",col="black",cex = 1)
-text(ccap, "species", col="blue", cex=0.8)
+plot(ccap_flo,scaling=1)
+plot(ccap_flo, type="n")
+text(ccap_flo, col="blue",cex = 0.75)
+text(ccap_flo, dis="cn",col="black",cex = 1.2)
+plot(ccap_flo, type="n")
+text(ccap_flo, dis="cn",col="black",cex = 1)
+text(ccap_flo, "species", col="blue", cex=0.8)
 ```
-
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
 ## Selection du meilleur modèle
@@ -256,7 +262,6 @@ Grace à la selection du meilleur modèle, obtenu en minimisant l'AIC, on s'arr�
 asso.selected = mil[, c("K+", "Altitude",  "Capa_Reten", "Sable")]
 asso.select.mlogit = multinom(association$association~.,asso.selected)
 ```
-
 On vérifie la multicollinéarité :
 ```{r}
 vif(asso.select.mlogit)
@@ -281,3 +286,4 @@ confusion
 ## il faudrait la mettre en couleur mais j'ai pas trouvé...
 
 ```
+--> mettre en couleur cette matrice 
