@@ -273,9 +273,19 @@ asso.selected.no.sand$K = asso.selected.no.sand$"K+"
 asso.selected.no.sand = asso.selected.no.sand[-1]
 model_final = multinom(association$association~.,asso.selected.no.sand)
 
+summary(model_final)
+
 vif(model_final) 
 ```
 Désormais, mode_final ne présentente pas de soucis de multicollinéarité. Nous allons l'utiliser pour réaliser de la prédiction de classe.
+
+Le modèle peut être représenté par un système de 6 équations batties comme la suivante, avec i variant entre 2 et 7.
+
+$ i=2,...,7$
+
+$ \frac{{P(Y = C_{i} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}}{{P(Y = C_{1} | x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}} = \beta_{0i} + \beta_{1i} \cdot X_{1} + \beta_{2i} \cdot X_{2} + \beta_{3i} \cdot X_{3} $
+
+Avec $\beta_{0}$ est l'intercept, $\beta_{1}$ est le coefficient d'altitude, $\beta_{2}$ est le coefficient de capacité de rétention et $\beta_{3}$ le coefficient de concentration en K+.
 
 ## Prédictions
 ```{r}
