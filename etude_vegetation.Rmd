@@ -314,19 +314,27 @@ Cela signifie que notre pCCA ne peut pas être lié au hasard mais qu'il existe 
 Nous pouvons maintenant nous intéresser aux résultats de notre pCCA :
 
 ```{r}
+summary(ccap_flo)
+
+```
+Ce tableau devient vite illisible et le nombre d'information est très importante. Décomposons donc les différents résultats :
+
+```{r}
 ccap_flo$CCA$v #(A)
 
 
 ccap_flo$CCA$biplot #(B)
 
 
-MVA.synt(ccap_flo) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
+#MVA.synt(ccap_flo) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
 
 
 ```
 
 Premièrement, nous observons le score des espèces végétales pour chaque axe.
 (A)
+
+
 
 Nous faisons la même observation pour le score des variables environnementales.
 (B)
@@ -354,11 +362,9 @@ text(ccap_flo, dis="cn",col="black",cex = 1, scaling='sites')
 
 ```
 
-##JE NE COMPREND PAS POURQUOI ON A PAS LES NUMEROS DES SITES QUI APPARAISSENT SUR LES GRAPHES "scaling" CAR DU COUP ON NE PEUT PAS INTERPRETER....
-
 # Création d'un modèle à vocation prédictive pour la classe de Association
 
-## Selection du meilleur modèle
+## Séléction du meilleur modèle
 
 ```{r}
 asso.mlogit = multinom(association$association~.,mil) #(A)
