@@ -107,7 +107,7 @@ s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
 ### Test et standardization
 
 Avant de commencer l'analyse, il s'agit de tester l'homogénéité de la variance avec le test de Bartlett.
-Les données sont ensuite standardizées de la façon suivante :
+Les données sont ensuite standardisées de la façon suivante :
 La transformation d'Hellinger est appliquée aux données floristiques.
 Les données pédologique (mil) sont centrées et réduite car les unités des variables ne sont pas identiques.
 
@@ -115,8 +115,10 @@ Les données pédologique (mil) sont centrées et réduite car les unités des v
 bartlett.test(flo)
 #pas de normalité car rejet de l'HP de normalité avec la normalité avec la pvalue
 
+barplot(table(unlist(flo)), xlab = "Abondances") # Distribution des abondances.
+
 #standardization methods : adapt to your own data
-flo <- decostand(flo, "hellinger") #package vegan
+flo_hel <- decostand(flo, "hellinger") #package vegan
 mil= as.data.frame(scale(mil, center=TRUE, scale=TRUE))
 ```
 Le test de Barlett confirme que nous nous trouvons en situation d'homocédasticité.
@@ -127,13 +129,25 @@ Le test de Barlett confirme que nous nous trouvons en situation d'homocédastici
 M <- cor(mil)
 par(mfrow=c(1,1))
 corrplot(M, method = "number")
+
+# Pheatmap des corrélations
+
+heatmap(abs(cor(mil)), # corrélation de Pearson (note: ce sont des valeurs absolues!)
+        col = rev(heat.colors(6)),
+        Colv = NA, Rowv = NA)
+legend("topright",
+       title = "R de Pearson",
+       legend =  round(seq(0,1, length.out = 6),1),
+       y.intersp = 0.7, bty = "n",
+       fill = rev(heat.colors(6)))
+
 ```
 
 Il existe de rares corrélations entre variables, au seuil 0.7, Na+ est corrélé avec Conduct et Sable avec Argile.
 Ce résultat n'est pas surprenant, comme le limon, le sable et l'argile donnent la texture du sol, ces trois variables sont corrélées. 
 Pour le moment, toutes les varibales sont concervées. Il s'agira de vérifier s'il reste des corrélations dans les variables qui seront choisies lors de la création de modèle.
 
-#### Pour les données floristiques
+#### Pour les données floristiques (ne sert à rien ?)
 ```{r}
 M <- cor(flo)
 corrplot(M, method = "number",type="upper") #pas de corrélation entre les espece.
@@ -181,7 +195,7 @@ mil2=mil[,c("Mg++", "K+", "Capa_Reten", "Altitude")] #c'est le bon modèle, obte
 #allow to check which variables would be selected. Control if they are correlated ?
 #I propose to select :
 test=vif.cca(first) 
-test#problème (>10)
+test #problème (>10)
 # 
 # 
 # mil3=mil[,c("Limon","Argile",'Mg++','K+',"Capa_Reten","Altitude")]
