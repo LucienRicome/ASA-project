@@ -226,15 +226,14 @@ Cela est également visible en réalisant le plot sur le test de Mantel.
 ###sélection des variables non redondantes (collinéarité)###
 rdadoubs=rda(flo~.,mil) #CCA (A)
 first=ordistep(rdadoubs,perm.max=500) #(B)
-first (C)
-mil2=mil[,c("Mg++", "K+", "Capa_Reten", "Altitude")] 
+first #(C)
 
 
 test=vif.cca(first) #(D)
 test #(E)
  
- 
-selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE))
+mil2=mil[,c("Mg++", "K+", "Capa_Reten", "Altitude")] 
+selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE)) #(F)
 
 ```
 
@@ -256,45 +255,61 @@ Pour cela, nous utilisons la Variance Inflation Factor (VIF) qui permet de teste
 Si la valeur VIF est inférieure à 10 pour chaque variable, alors il est possible de conclure qu'il n'y a pas de corrélation entre elles.
 C'est le cas ici (E)
 
+Nous récupérons donc les variables environnementales séléctionnées.
+(F)
+
 ## Partitionnement de variance
 
-On réalise un partionnement de variance pour étudier comment est distribuée la variance du tableau de comptage floristique en fonction des caractéristiques pédologiques du milieu et des cordonnées géographiques.
+On réalise un partitionnement de variance pour étudier comment est distribuée la variance du tableau de comptage floristique en fonction des caractéristiques pédologiques du milieu et des cordonnées géographiques.
 
 ```{r}
 partion_var <- varpart(flo,mil,coord)
 plot(partion_var, bg=2:5)
 ```
 
-Les données pédologiques expliquent 10% de la variance de la distribution floristique.
-6% de cette variance sont expliqués par les coordonnées géographique.
-L'interraction entre pédologie et géographie explique 4% de la variance du tableau de comptage des espèces végétales.
+Les données pédologiques expliquent, à elles seules 9% de la variance de la distribution floristique.
+7% de cette variance est expliquée par les coordonnées géographique.
+L'interaction entre pédologie et géographie explique 4% de la variance du tableau de comptage des espèces végétales.
 On constate que la majorité de la variance (80%) des espèces végétales n'est pas expliquée par les données dont nous disposons.
-Par la suite, nous allons exclure la dépendance spaciale en travaillant sur l'influence du milieu pédologique sur les communautés végétales en réalisant une Analyses des Correspondances en Composantes Principales.
+
+Par la suite, nous allons exclure la dépendance spatiale en travaillant sur l'influence du milieu pédologique sur les communautés végétales.
+Pour cela, nous allons réaliser une Analyse Partielle Canonique des Correspondances (pCCA).
+En effet, nous avons un tableau de contingence qui peut être analysé par une AFC alors que le tableau de variables environnementales sera analysé par une ACP.
+De plus, comme nous savons que l'environnement devrait expliquer l'abondance des espèces végétales, nous faison une analyse *a priori* et donc ne nous dirigeons pas vers une co-inertie.
 
 --\> Mettre des légendes au graph au lieu de X1 et X2, écrire Milieu et Spacial...
 
-## Principal Component Correspondence Analysis
+## Partial Canonical Correspondence Analysis
 
-L'Analyses des Correspondances en Composantes Principales est réalisée avec le package Vegan.
+L'Analyse Partielle Canonique des Correspondances est réalisée avec le package Vegan.
 
 ```{r}
 ccap_flo=cca(flo,selected,coord,scan=F)
 ccap_flo
 ```
 
-L'inertie totale du tableau de comptage floristique s'élève à 8.3.
-9% de cette inertie est expliquée par les coordonnées géographiques et 9% par les données pédologiques du milieu.
+L'inertie total de l'analyse correspond à 7.97.
+Nous avons ensuite le détail de l'ensemble des partitionnements de variance.
+"Conditionnal" correspond à la variance expliquée par les coordonnées géographiques et dont on veut "se débarrasser".
+Cela correspond à une inertie de 0.70.
+La partie "Constrained" est la partie qui nous intéresse puisque c'est la variance de nos espèces végétales liée au milieu.
+On retrouve ici nos 9% soit une inertie de 0.71.
+Enfin, la parite "Unconstrained" est la part lié aux résidus.
 C'est donc 80% de l'inertie qui n'est pas expliquée par les tables de valeur dont nous disposons.
 
-Le premier axe représente 50% (0.35/0.7) de la variance expliquée par le milieu pédologique et 4% de la variance totale de la distribution floristique.
+Nous nous intéressons donc principalement à la partie "Constrained".
+Le premier axe représente environ 50% (0.35/0.7) de la variance expliquée par le milieu pédologique et 4% de la variance totale de la distribution floristique (voir CCA1 - constrained part).
+Le deuxième axe représente lui 25% (0.18/0.7) de la variance contrainte et 2% de la partie totale.
 
-La pCCA est testée à l'aide d'une anova :
+La pCCA est testée à l'aide d'un test de permutation :
 
 ```{r}
 anova.cca(ccap_flo)
 ```
 
+Ici, 999 permutations des données ont été réalisées pour observer si le résultat de la pCCA n'était pas simplement dû à l'aléatoire.
 Les résultats de la pCCA sont significatifs (pvalue = 0.001).
+Cela signifie que notre pCCA ne peut pas être lié au hasard mais qu'il existe bien un lien entre nos différents tableaux.
 
 ```{r}
 #ccap_flo$CCA$v #coordonnées des especes sur les axes
