@@ -3,6 +3,9 @@ title: "Etude de la végétation de Mafragh"
 author: "Aldric, Baptiste, Jeanne, Lucien, Lucile"
 date: "2023-10-05"
 output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 ```{r setup, include=FALSE}
@@ -11,13 +14,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-Une petite mise en contexte
-Ou se situe la plaine du Mafragh ? Quelle est la végétation associée ? Pourquoi relier sol et plantes est pertinent...
-
+Une petite mise en contexte Ou se situe la plaine du Mafragh ?
+Quelle est la végétation associée ?
+Pourquoi relier sol et plantes est pertinent...
 
 ## Chargement des packages
 
 ```{r cars, include=FALSE}
+rm(list=ls(all=TRUE))  # Reset the working environment
+
 library(readxl)
 #libraries for time series analyses
 library(nlme)      #glm and gls
@@ -30,18 +35,17 @@ library(spatialreg) #used for spatial data modelling
 library(gwrr)  #to run geographically weighted regression
 library(ade4)
 library(vegan)
-library("ggplot2")
-library("factoextra")
+library(ggplot2)
+library(factoextra)
 library(corrplot)
 library(RVAideMemoire)
-library("PerformanceAnalytics")
+library(PerformanceAnalytics)
 library(readxl)
 
 require(questionr)
 require(nnet)
 require(aod)
 
-require(regclass)
 require(car)
 ```
 
@@ -58,23 +62,44 @@ association = read_excel(file_path, sheet = "association")
 flo_mil = cbind(flo, mil)
 ```
 
-# Exploration du jeu de données 
+Nous récupérons ici le jeu de données afin de réaliser l'analyse.
+\
+Nous créons quatre data.frames afin d'obtenir les différents tableaux nécessaires à l'analyse :
 
-## Représentation spaciale
+-   "flo" = tableau d'abondance des espèces végétales par site (tableau de contingence)
 
-virer xy et mettre coord partout(c'est une colonne du jeu de donnée !)
+-   "mil" = variables environnementales (pédologiques) par site (variables quantitatives uniquement)
+
+-   "coord" = coordonnées GPS des différents sites
+
+-   "association" = zonage du mileu d'étude en fonction d'associations végétales (variable qualitative)
+
+# Exploration du jeu de données
+
+## Représentation spatiale
+
 ```{r}
 coord
 plot(coord)
-coord.knear4 = knearneigh(as.matrix(coord),4) #to extract the neighbour points
+coord.knear4 = knearneigh(as.matrix(coord),4) #(A)
 knn2nb(coord.knear4)
-plot(knn2nb(coord.knear4), coord, add=TRUE)
+plot(knn2nb(coord.knear4), coord, add=TRUE) #(B)
 
 
 ade4::s.label(coord, ylim=c(min(coord[,1])-50, max(coord[,1])+50) ,xlim=c(min(coord[,2])-50,max(coord[,2])+50),  clabel=0.6,cpoint=1,neig=nb2neig(knn2nb(coord.knear4)))
 ```
 
-##Représentation des voisins --> on garde ou pas ? pas exploité par la suite...
+Ci-dessous, nous commençons à parcourir les données en étudiant les coordonnées géographiques des différents sites.
+
+Le plot permet d'observer la répartition des points et aucune configuration régulière ne se détache (ex : root, queen, etc.)
+
+Nous décidons d'étudier la répartition des points par l'étude de leur quatre plus proches voisins.
+Pour cela nous extrayons les voisins (A), puis nous vérifions que les 97 sites sont dotés de quatre voisins ce qui est le cas puisque le nombre de lien est bien de 388 (97\*4)
+
+Nous réalisons ensuite un plot afin de voir comment les points sont reliés entre eux (B)
+
+##Représentation des voisins --\> on garde ou pas ?
+pas exploité par la suite...
 
 ```{r}
 #Gabriel :
@@ -103,26 +128,31 @@ s.label(coord,clabel=0,cpoint=1,neig=nb2neig(veg.tri))
 s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
 ```
 
-## Analyses préliminaires 
+## Analyses préliminaires
+
 ### Test et standardization
 
 Avant de commencer l'analyse, il s'agit de tester l'homogénéité de la variance avec le test de Bartlett.
-Les données sont ensuite standardizées de la façon suivante :
-La transformation d'Hellinger est appliquée aux données floristiques.
+Les données sont ensuite standardizées de la façon suivante : La transformation d'Hellinger est appliquée aux données floristiques.
+Cela permet notamment de pallier le problème lié à l'écart d'abondance entre plusieurs espèces.
 Les données pédologique (mil) sont centrées et réduite car les unités des variables ne sont pas identiques.
 
 ```{r}
 bartlett.test(flo)
-#pas de normalité car rejet de l'HP de normalité avec la normalité avec la pvalue
 
 #standardization methods : adapt to your own data
 flo <- decostand(flo, "hellinger") #package vegan
 mil= as.data.frame(scale(mil, center=TRUE, scale=TRUE))
 ```
+
 Le test de Barlett confirme que nous nous trouvons en situation d'homocédasticité.
+H0 correspond à la situation d'homogénité des variances et la p-value ici est inférieure à 2.2e-16 : rejet de H0\
+La transformation par Helliger était donc nécessaire.
 
 ### Etude de la corrélation entre variables
-#### Pour les données pédologiques 
+
+#### Pour les données pédologiques
+
 ```{r}
 M <- cor(mil)
 par(mfrow=c(1,1))
@@ -130,96 +160,140 @@ corrplot(M, method = "number")
 ```
 
 Il existe de rares corrélations entre variables, au seuil 0.7, Na+ est corrélé avec Conduct et Sable avec Argile.
-Ce résultat n'est pas surprenant, comme le limon, le sable et l'argile donnent la texture du sol, ces trois variables sont corrélées. 
-Pour le moment, toutes les varibales sont concervées. Il s'agira de vérifier s'il reste des corrélations dans les variables qui seront choisies lors de la création de modèle.
+Ce résultat n'est pas surprenant, comme le limon, le sable et l'argile donnent la texture du sol, ces trois variables sont corrélées.
+Pour le moment, toutes les varibales sont concervées.
+Il s'agira de vérifier s'il reste des corrélations dans les variables qui seront choisies lors de la création de modèle.
 
 #### Pour les données floristiques
+
 ```{r}
 M <- cor(flo)
 corrplot(M, method = "number",type="upper") #pas de corrélation entre les espece.
 ```
+
 Il n'y a pas de corrélation entre les différentes espèces.
 
 #### Etudes des corrélations entre les données floristiques et pédologiques
+
 ```{r}
 M <- cor(flo_mil)
 corrplot(M, method = "square")  #ni entre esp et envrnt
 ```
+
 Pas de corrélation entre les espèces et des données pédologiques.
 
-Ces analyses préliminaires nous ont montrées que nous faisons face à de grands tableaux de valeurs mais présentant peu de corrélations entre variables. 
+Ces analyses préliminaires nous ont montrées que nous faisons face à de grands tableaux de valeurs mais présentant peu de corrélations entre variables.
 Par la suite, nous allons nous pencher sur la corrélation spaciale
 
-
-## Etude de l'autocorrélation spaciale 
+## Etude de l'autocorrélation spaciale
 
 ```{r}
-geo = dist(xy)
+geo = dist(xy) #(A.1)
 
-chim = dist(scale(mil),method = "euclidian") #caclue de la distance entre les points 
+chim = dist(scale(mil),method = "euclidian") #(A.2)
 
-# the test used to correlate those two matrix is a Mantel test, it uses randomization of the values 
-#to have the expected distribution under H0
-# H0: the correlation between teh two matrix is null : there is no spatial autocorrelation
-r1 = mantel.rtest(geo,chim,nrepet=1000) 
-r1 ##Significatif donc réelle autocorrelation spatiale, pvalue = 0.02 !
+r1 = mantel.rtest(geo,chim,nrepet=1000) #(B)
+r1 #(C)
 
-plot(r1, main = "Mantel's test")
+plot(r1, main = "Mantel's test") #(D)
 ```
 
+Pour cela, nous utilisons le test de Mansel qui permet de tester la présence d'autocorrélation spatiale sur des jeux de données avec de nombreuses variables et qui seront traités par la suite par des analyses multivariées.
+
+Nous commençons par calculer les distances géographiques entre les sites et celles entre les variables quantitatives représentant l'environnement.
+(A.1 & A.2)\
+
+Ensuite, nous utilisons la fonction "mantel.rtest" pour simuler nrepet fois la correlation entre les deux matrices de distance précédemment calculé.
+Cela va permettre d'obtenir une loi de distribution sur les fréquences de corrélation quand les couples de valeurs sont créés aléatoirement.
+(B)\
+
+La corrélation réelle observée est alors comparé à cette loi de distribution.
+L'hypothèse H0 est que la correlation entre les deux matrices est nulle.
+(C)
+
+Nous observons ici que la p-value est de 2% ce qui signifie qu'il existe une réelle autocorrélation spatiale dans notre jeu de données.
+Cela est également visible en réalisant le plot sur le test de Mantel.
+(C & D)
+
+**Nous allons donc nour diriger vers des analyses multivariées prenant en compte cette autocorrélation spatiale.**
+
 # Etude statistique
+
 ## Selection des variables pertinententes
 
 ```{r}
 
 ###sélection des variables non redondantes (collinéarité)###
-rdadoubs=rda(flo~.,mil) #CCA 
-first=ordistep(rdadoubs,perm.max=500)
-first
-mil2=mil[,c("Mg++", "K+", "Capa_Reten", "Altitude")] #c'est le bon modèle, obtenu avec l'ordistep
+rdadoubs=rda(flo~.,mil) #CCA (A)
+first=ordistep(rdadoubs,perm.max=500) #(B)
+first (C)
+mil2=mil[,c("Mg++", "K+", "Capa_Reten", "Altitude")] 
 
-#allow to check which variables would be selected. Control if they are correlated ?
-#I propose to select :
-test=vif.cca(first) 
-test#problème (>10)
-# 
-# 
-# mil3=mil[,c("Limon","Argile",'Mg++','K+',"Capa_Reten","Altitude")]
-selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE)) #c'est mil2
-# rdadoubs3=rda(flo~.,mil3)
-# test=vif.cca(rdadoubs3) 
-# test#all good
+
+test=vif.cca(first) #(D)
+test #(E)
+ 
+ 
+selected=as.data.frame(scale(mil2, center=TRUE, scale=TRUE))
+
 ```
 
-## Partitionnement de variance 
+Le but du script ci-dessus est de séléctionner les variables environnementales pertinentes pour nos analyses.
+En effet, garder l'ensemble des variables peut être lourd pour l'analyse et demande un nombre de sites très important.
+La variance peut se retrouver éclater entre l'ensemble des variables.
+De plus, une corrélation entre plusieurs variables a été démontrée précédemment.
+
+Pour trouver les variables d'intérêt, nous allons créer un modèle complet, c'est-à-dire avec l'ensemble des variables environnementales (explicatives) (A), puis nous utilisons la fonction "ordistep" afin de faire une séléction de variables (B).
+A chaque tour, la variable la moins significative est enlevée jusqu'obtenir uniquement des variables significatives.
+
+Le résultat permet de fortement réduire le nombre de variables puisque seules quatre sont séléctionnées : "Mg++" ; "K+", "Capa_Reten" et "Altitude".
+(C)
+
+Avant de valider ces variables, il faut cependant vérifier qu'il n'existe pas de corrélation entre elles.
+Pour cela, nous utilisons la Variance Inflation Factor (VIF) qui permet de tester la corrélation entre chaque variable par rapport à l'ensemble des autres présentes dans le modèle.
+(D)
+
+Si la valeur VIF est inférieure à 10 pour chaque variable, alors il est possible de conclure qu'il n'y a pas de corrélation entre elles.
+C'est le cas ici (E)
+
+## Partitionnement de variance
 
 On réalise un partionnement de variance pour étudier comment est distribuée la variance du tableau de comptage floristique en fonction des caractéristiques pédologiques du milieu et des cordonnées géographiques.
+
 ```{r}
 partion_var <- varpart(flo,mil,coord)
 plot(partion_var, bg=2:5)
 ```
-Les données pédologiques expliquent 10% de la variance de la distribution floristique. 6% de cette variance sont expliqués par les coordonnées géographique. 
-L'interraction entre pédologie et géographie explique 4% de la variance du tableau de comptage des espèces végétales. 
+
+Les données pédologiques expliquent 10% de la variance de la distribution floristique.
+6% de cette variance sont expliqués par les coordonnées géographique.
+L'interraction entre pédologie et géographie explique 4% de la variance du tableau de comptage des espèces végétales.
 On constate que la majorité de la variance (80%) des espèces végétales n'est pas expliquée par les données dont nous disposons.
 Par la suite, nous allons exclure la dépendance spaciale en travaillant sur l'influence du milieu pédologique sur les communautés végétales en réalisant une Analyses des Correspondances en Composantes Principales.
 
---> Mettre des légendes au graph au lieu de X1 et X2, écrire Milieu et Spacial...
+--\> Mettre des légendes au graph au lieu de X1 et X2, écrire Milieu et Spacial...
 
-## Principal Component Correspondence Analysis 
+## Principal Component Correspondence Analysis
 
 L'Analyses des Correspondances en Composantes Principales est réalisée avec le package Vegan.
+
 ```{r}
 ccap_flo=cca(flo,selected,coord,scan=F)
 ccap_flo
 ```
-L'inertie totale du tableau de comptage floristique s'élève à 8.3. 9% de cette inertie est expliquée par les coordonnées géographiques et 9% par les données pédologiques du milieu. C'est donc 80% de l'inertie qui n'est pas expliquée par les tables de valeur dont nous disposons.
 
-Le premier axe représente 50% (0.35/0.7) de la variance expliquée par le milieu pédologique et 4% de la variance totale de la distribution floristique. 
+L'inertie totale du tableau de comptage floristique s'élève à 8.3.
+9% de cette inertie est expliquée par les coordonnées géographiques et 9% par les données pédologiques du milieu.
+C'est donc 80% de l'inertie qui n'est pas expliquée par les tables de valeur dont nous disposons.
+
+Le premier axe représente 50% (0.35/0.7) de la variance expliquée par le milieu pédologique et 4% de la variance totale de la distribution floristique.
 
 La pCCA est testée à l'aide d'une anova :
+
 ```{r}
 anova.cca(ccap_flo)
 ```
+
 Les résultats de la pCCA sont significatifs (pvalue = 0.001).
 
 ```{r}
@@ -232,7 +306,9 @@ ccap_flo$CCA$biplot #coordonnées des variables
 #goodness(ccap_flo)
 
 ```
-L'altitude est fortement corrélée négativement au premier axe. La capacité de rétention est fortement corrélée négativement au deuxième axe.
+
+L'altitude est fortement corrélée négativement au premier axe.
+La capacité de rétention est fortement corrélée négativement au deuxième axe.
 
 ```{r}
 #plot the pCCA
@@ -247,6 +323,7 @@ text(ccap_flo, "species", col="blue", cex=0.8)
 ```
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
+
 ## Selection du meilleur modèle
 
 ```{r}
@@ -258,15 +335,21 @@ model = step(asso, direction = "both", scope = formula(asso.mlogit))
 ```
 
 Grace à la selection du meilleur modèle, obtenu en minimisant l'AIC, on s'arrête sur les variables K+, Altitude, Capa_Reten et Sable.
+
 ```{r}
 asso.selected = mil[, c("K+", "Altitude",  "Capa_Reten", "Sable")]
 asso.select.mlogit = multinom(association$association~.,asso.selected)
 ```
+
 On vérifie la multicollinéarité :
+
 ```{r}
 vif(asso.select.mlogit)
 ```
-La valeur du VIF pour la variable Sable s'élève à 1933, c'est beaucoup trop ! Il s'agira d'enlever cette variable :
+
+La valeur du VIF pour la variable Sable s'élève à 1933, c'est beaucoup trop !
+Il s'agira d'enlever cette variable :
+
 ```{r}
 asso.selected.no.sand = mil[, c("K+", "Altitude",  "Capa_Reten")]
 asso.selected.no.sand$K = asso.selected.no.sand$"K+"
@@ -277,17 +360,20 @@ summary(model_final)
 
 vif(model_final) 
 ```
-Désormais, mode_final ne présentente pas de soucis de multicollinéarité. Nous allons l'utiliser pour réaliser de la prédiction de classe.
+
+Désormais, mode_final ne présentente pas de soucis de multicollinéarité.
+Nous allons l'utiliser pour réaliser de la prédiction de classe.
 
 Le modèle peut être représenté par un système de 6 équations batties comme la suivante, avec i variant entre 2 et 7.
 
-$ i=2,...,7$
+\$ i=2,...,7\$
 
-$ \frac{{P(Y = C_{i} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}}{{P(Y = C_{1} | x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}} = \beta_{0i} + \beta_{1i} \cdot X_{1} + \beta_{2i} \cdot X_{2} + \beta_{3i} \cdot X_{3} $
+\$ \frac{{P(Y = C_{i} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}}{{P(Y = C_{1} | x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}} = \beta*{0i} +* \beta{1i} \cdot X\_{1} + \beta*{2i}* \cdot X{2} + \beta*{3i}* \cdot X{3} \$
 
 Avec $\beta_{0}$ est l'intercept, $\beta_{1}$ est le coefficient d'altitude, $\beta_{2}$ est le coefficient de capacité de rétention et $\beta_{3}$ le coefficient de concentration en K+.
 
 ## Prédictions
+
 ```{r}
 proba = predict(model_final, newdata = data.frame(asso.selected.no.sand), type="class")
 confusion = table(association$association,proba,dnn=list("Observed","Predicted"))
@@ -296,4 +382,5 @@ confusion
 ## il faudrait la mettre en couleur mais j'ai pas trouvé...
 
 ```
---> mettre en couleur cette matrice 
+
+--\> mettre en couleur cette matrice
