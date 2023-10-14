@@ -311,31 +311,49 @@ Ici, 999 permutations des données ont été réalisées pour observer si le ré
 Les résultats de la pCCA sont significatifs (pvalue = 0.001).
 Cela signifie que notre pCCA ne peut pas être lié au hasard mais qu'il existe bien un lien entre nos différents tableaux.
 
-```{r}
-#ccap_flo$CCA$v #coordonnées des especes sur les axes
-ccap_flo$CCA$biplot #coordonnées des variables
+Nous pouvons maintenant nous intéresser aux résultats de notre pCCA :
 
-#MVA.synt(ccap_flo) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
-#par(mfrow=c(1,2))
-#plot(ccap_flo,scaling=2)
-#goodness(ccap_flo)
+```{r}
+ccap_flo$CCA$v #(A)
+
+
+ccap_flo$CCA$biplot #(B)
+
+
+MVA.synt(ccap_flo) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
+
 
 ```
+
+Premièrement, nous observons le score des espèces végétales pour chaque axe.
+(A)
+
+Nous faisons la même observation pour le score des variables environnementales.
+(B)
 
 L'altitude est fortement corrélée négativement au premier axe.
 La capacité de rétention est fortement corrélée négativement au deuxième axe.
 
+
+
 ```{r}
 #plot the pCCA
-par(mfrow=c(1,1))
+par(mfrow=c(1,2))
 plot(ccap_flo,scaling=1)
+plot(ccap_flo,scaling=2)
+plot(ccap_flo,scaling=3)
+
+par(mfrow=c(1,1))
 plot(ccap_flo, type="n")
 text(ccap_flo, col="blue",cex = 0.75)
 text(ccap_flo, dis="cn",col="black",cex = 1.2)
 plot(ccap_flo, type="n")
 text(ccap_flo, dis="cn",col="black",cex = 1)
 text(ccap_flo, "species", col="blue", cex=0.8)
+
 ```
+
+  ##JE NE COMPREND PAS POURQUOI ON A PAS LES NUMEROS DES SITES QUI APPARAISSENT SUR LES GRAPHES "scaling" CAR DU COUP ON NE PEUT PAS INTERPRETER....
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
 
