@@ -12,7 +12,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 ```
 
-# Introduction
+## Introduction
 
 La plaine du Mafragh est une entité géomorphologique au sud de la Mer Médirranée couvrant 15000 ha. La zone d'étude est répartie sur 10000ha de cette plaine. Des relevés pédologiques et d'abondance phytosociologiques ont été réalisé sur 97 sites. Les coordonnées GPS de chaque site sont connues. On se demande quelle sont les variables pédologiques qui structurent les communités végétales de la plaine du Mafragh.
 
@@ -90,7 +90,7 @@ ade4::s.label(coord, ylim=c(min(coord[,1])-50, max(coord[,1])+50) ,xlim=c(min(co
 
 Ci-dessous, nous commençons à parcourir les données en étudiant les coordonnées géographiques des différents sites.
 
-Le plot permet d'observer la répartition des points et aucune configuration régulière ne se détache (ex : root, queen, etc.)
+Le graphique permet d'observer la répartition des points et aucune configuration régulière ne se détache (ex : rook, queen, etc.)
 
 Nous décidons d'étudier la répartition des points par l'étude de leur quatre plus proches voisins.
 Pour cela nous extrayons les voisins (A), puis nous vérifions que les 97 sites sont dotés de quatre voisins ce qui est le cas puisque le nombre de lien est bien de 388 (97\*4)
@@ -133,13 +133,13 @@ s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
 
 Avant de commencer l'analyse, il s'agit de tester l'homogénéité de la variance avec le test de Bartlett.
 Les données sont ensuite standardizées de la façon suivante : La transformation d'Hellinger est appliquée aux données floristiques.
-Cela permet notamment de pallier le problème lié à l'écart d'abondance entre plusieurs espèces.
+Cela permet notamment de pallier le problème de l'écart d'abondance entre plusieurs espèces.
 Les données pédologique (mil) sont centrées et réduite car les unités des variables ne sont pas identiques.
 
 ```{r}
 bartlett.test(flo)
 
-barplot(table(unlist(flo)), xlab = "Abondances") # Distribution des abondances.
+barplot(table(unlist(flo)), xlab = "Abondances", ylab="nombre d'apparition", main="Distribution des données de comptage floristique", col="#00AFBB") # Distribution des abondances.
 
 #standardization methods : adapt to your own data
 flo_hel <- decostand(flo, "hellinger") #package vegan
@@ -201,8 +201,6 @@ Par la suite, nous allons nous pencher sur la corrélation spaciale
 ## Etude de l'autocorrélation spatiale
 
 ```{r}
-
-
 geo = dist(coord) #(A.1)
 
 chim = dist(scale(mil),method = "euclidian") #(A.2)
@@ -214,7 +212,6 @@ plot(r1, main = "Mantel's test",
      xlab = "Simulations",
      ylab = "Fréquence")
 text(0.1, 190, paste("p.value ", round(r1$pvalue,2), sep = "= "))#(D)
-
 ```
 
 Pour cela, nous utilisons le test de Mantel qui permet de tester la présence d'autocorrélation spatiale sur des jeux de données avec de nombreuses variables et qui seront traités par la suite par des analyses multivariées.
@@ -248,9 +245,7 @@ rdadoubs=rda(flo~.,mil) #CCA (A)
 first=ordistep(rdadoubs,perm.max=500) #(B)
 first #(C)
 
-#allow to check which variables would be selected. Control if they are correlated ?
-#I propose to select :
-
+### test de colinéarité ###
 test=vif.cca(first) #(D)
 test #(E)
  
@@ -298,7 +293,7 @@ On constate que la majorité de la variance (80%) des espèces végétales n'est
 Par la suite, nous allons exclure la dépendance spatiale en travaillant sur l'influence du milieu pédologique sur les communautés végétales.
 Pour cela, nous allons réaliser une Analyse Partielle Canonique des Correspondances (pCCA).
 En effet, nous avons un tableau de contingence qui peut être analysé par une AFC alors que le tableau de variables environnementales sera analysé par une ACP.
-De plus, comme nous savons que l'environnement devrait expliquer l'abondance des espèces végétales, nous faison une analyse *a priori* et donc ne nous dirigeons pas vers une co-inertie.
+De plus, comme nous savons que l'environnement devrait expliquer l'abondance des espèces végétales, nous faisons une analyse *a priori* et donc ne nous dirigeons pas vers une co-inertie.
 
 ## Partial Canonical Correspondence Analysis
 
@@ -336,7 +331,6 @@ Nous pouvons maintenant nous intéresser aux résultats de notre pCCA :
 
 ```{r }
 summary(ccap_flo)
-
 ```
 
 Ce tableau devient vite illisible et le nombre d'information est très importante.
@@ -347,8 +341,6 @@ ccap_flo$CCA$v #(A)
 
 
 ccap_flo$CCA$biplot #(B)
-
-
 ```
 
 Premièrement, nous observons le score des espèces végétales pour chaque axe.
@@ -371,7 +363,7 @@ Cette variable se trouve également négativement corrélée à K+.
 La capacité de rétention est fortement corrélée négativement au deuxième axe, tout comme Mg++ dans une moindre mesure.
 
 
-Les plots ci-dessous permettent d'illustrer nos précédent propos :
+Les représentations graphiques ci-dessous permettent d'illustrer nos précédent propos :
 
 ```{r }
 #plot the pCCA
@@ -408,9 +400,7 @@ Nous avons donc dû nous tourner vers une Analyse Partielle Canonique des Corres
 La projection des axes canoniques montre quels sont les paramètres environnementaux qui déterminent l'abondance des espèces après l'analyse et le retrait de l'effet de la dépendance spatiale.
 
 
-
-Conclure sur les effets des var envir sur l'abondance des espèces et les sites... infos au dessus
-
+Ainsi, les variables infulant sur la distribution des espèces floristique sont l'altitude et la capacité de rétention en eau mais également la concentration en ions K+ et Mg++. Ces quatre variables n'étant corrélées à aucune autre, nous pouvons conclure qu'elles sont seules responsable de la répartition floristique.
 
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
@@ -472,7 +462,7 @@ Le modèle peut être représenté par un système de 6 équations batties comme
 
 $$ i=2,...,7$$
 
-$$ \frac{{P(Y = C_{i} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}}{{P(Y = C_{1} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}} = \beta_{0i} + \beta_{1,i} \cdot X_{1} + \beta_{2,i} \cdot X_{2} + \beta_{3,i} \cdot X_{3} $$
+$$ log(\frac{{P(Y = C_{i} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}}{{P(Y = C_{1} | X_{1} = x_{1}, X_{2} = x_{2}, X_{3} = x_{3})}}) = \beta_{0,i} + \beta_{1,i} \cdot X_{1} + \beta_{2,i} \cdot X_{2} + \beta_{3,i} \cdot X_{3} $$
 
 Avec $\beta_{0}$ est l'intercept, $\beta_{1}$ est le coefficient d'altitude, $\beta_{2}$ est le coefficient de capacité de rétention et $\beta_{3}$ le coefficient de concentration en K+.
 
@@ -505,3 +495,4 @@ Partitionner des données pour ne pas prédire avec les mêmes données était i
 
 Ensuite, nous réalisons une matrice de confusion afin de visualiser les résultats de nos prédictions et donc de notre modèle.
 (B)
+Celui-ci a une accuracy de 0.54, il prédit donc correctement une fois sur deux.
