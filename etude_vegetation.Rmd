@@ -178,13 +178,11 @@ Ce résultat n'est pas surprenant, comme le limon, le sable et l'argile donnent 
 Pour le moment, toutes les varibales sont concervées.
 Il s'agira de vérifier s'il reste des corrélations dans les variables qui seront choisies lors de la création de modèle.
 
-
-
 #### Pour les données floristiques (utile ?)
 
 ```{r}
 M <- cor(flo)
-corrplot(M, method = "number",type="upper") #pas de corrélation entre les espece.
+corrplot(M, method = "number",type="upper")
 ```
 
 Il n'y a pas de corrélation entre les différentes espèces.
@@ -193,7 +191,7 @@ Il n'y a pas de corrélation entre les différentes espèces.
 
 ```{r}
 M <- cor(flo_mil)
-corrplot(M, method = "square")  #ni entre esp et envrnt
+corrplot(M, method = "square")
 ```
 
 Pas de corrélation entre les espèces et des données pédologiques.
@@ -201,7 +199,7 @@ Pas de corrélation entre les espèces et des données pédologiques.
 Ces analyses préliminaires nous ont montrées que nous faisons face à de grands tableaux de valeurs mais présentant peu de corrélations entre variables.
 Par la suite, nous allons nous pencher sur la corrélation spaciale
 
-## Etude de l'autocorrélation spaciale
+## Etude de l'autocorrélation spatiale
 
 ```{r}
 
@@ -238,7 +236,6 @@ Cela est également visible en réalisant le plot sur le test de Mantel.
 (C & D)
 
 **Nous allons donc nour diriger vers des analyses multivariées prenant en compte cette autocorrélation spatiale.**
-
 
 # Etude statistique
 
@@ -304,7 +301,6 @@ Pour cela, nous allons réaliser une Analyse Partielle Canonique des Corresponda
 En effet, nous avons un tableau de contingence qui peut être analysé par une AFC alors que le tableau de variables environnementales sera analysé par une ACP.
 De plus, comme nous savons que l'environnement devrait expliquer l'abondance des espèces végétales, nous faison une analyse *a priori* et donc ne nous dirigeons pas vers une co-inertie.
 
-
 ## Partial Canonical Correspondence Analysis
 
 L'Analyse Partielle Canonique des Correspondances est réalisée avec le package Vegan.
@@ -343,7 +339,9 @@ Nous pouvons maintenant nous intéresser aux résultats de notre pCCA :
 summary(ccap_flo)
 
 ```
-Ce tableau devient vite illisible et le nombre d'information est très importante. Décomposons donc les différents résultats :
+
+Ce tableau devient vite illisible et le nombre d'information est très importante.
+Décomposons donc les différents résultats :
 
 ```{r }
 ccap_flo$CCA$v #(A)
@@ -352,21 +350,28 @@ ccap_flo$CCA$v #(A)
 ccap_flo$CCA$biplot #(B)
 
 
-#MVA.synt(ccap_flo) #conditionnel = 8.78 c'est xy, constrained = 8.94 c'est mil
-
-
 ```
 
 Premièrement, nous observons le score des espèces végétales pour chaque axe.
 (A)
 
+Sur le premier axe, une majorité d'espèce se retrouve en -2 et 2.
+Seules quelques espèces semblent se détacher.
+C'est notamment le cas de E51, E34 et E53 qui sont négativement corrélées à l'axe 1 alors que E56 est quant à elle positivement corrélée à cet axe.
 
+Plusieurs espèces semblent négativement corrélées avec le second axe.
+C'est notamment le cas de E51, E39, E23 ou encore E40.
+D'autres espèces sont positivement corrélées sur cet même axe avec E34, E55 et un paquet regroupant E57, E21, E44 et E46.
+C'est sur cette axe que les espèces sont les plus dispersées.
 
 Nous faisons la même observation pour le score des variables environnementales.
 (B)
 
 L'altitude est fortement corrélée négativement au premier axe.
-La capacité de rétention est fortement corrélée négativement au deuxième axe.
+Cette variable se trouve également négativement corrélée à K+.
+La capacité de rétention est fortement corrélée négativement au deuxième axe, tout comme Mg++ dans une moindre mesure.
+
+Les plots ci-dessous permettent d'illustrer nos précédent propos :
 
 ```{r }
 #plot the pCCA
@@ -375,18 +380,33 @@ plot(ccap_flo,scaling=1)
 plot(ccap_flo,scaling=2)
 
 par(mfrow=c(1,1))
-plot(ccap_flo, type="n")
+plot(ccap_flo, type="n", main="Environmental variables")
 text(ccap_flo, col="blue",cex = 0.75)
 text(ccap_flo, dis="cn",col="black",cex = 1.2)
-plot(ccap_flo, type="n")
-text(ccap_flo, dis="cn",col="black",cex = 1)
-text(ccap_flo, "species", col="blue", cex=0.8)
 
-plot(ccap_flo, type="n")
+plot(ccap_flo, type="n", main="Environmental variables & species", scaling=1)
+text(ccap_flo, "species", col="blue", cex=0.8, scaling=1)
+text(ccap_flo, dis="cn",col="black",cex = 1, scaling=1)
+
+plot(ccap_flo, type="n", main="Environmental variables & sites")
 text(ccap_flo$CCA$wa, col='red')
 text(ccap_flo, dis="cn",col="black",cex = 1, scaling='sites')
 
 ```
+
+Une information ajoutée ici est la répartition des sites par la pCCA.
+Cela nous permet de voir que la répartition ressemble à celle des espèces avec l'axe 2 permettant principalement de séparer les sites.
+En effet, de nombreux sites sont corrélés négativement avec ce deuxième axe dont de nombreux compris entre 69 et 80.
+Les sites 95, 86 et 62 sont, eux, corrélés positivement avec cet axe.
+
+Pour conclure sur cette partie, nous cherchions à observer si l'environnement et plus précisément les caractères pédologiques du milieu pouvaient expliquer la répartition des espèces végétales retrouvées sur la zone d'étude.
+
+Pour cela, nous avons tout d'abord vérifier qu'aucune autocorrélation spatiales n'entrait en jeu (Mansel test) ce qui était cependant le cas.
+
+Nous avons donc dû nous tourner est une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
+La projection des axes canoniques montre quels sont les paramètres environnementaux qui déterminent l'abondance des espèces après l'analyse et le retrait de l'effet de la dépendance spatiale.
+
+Conclure sur les effets des var envir sur l'abondance des espèces et les sites... infos au dessus
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
 
@@ -472,4 +492,3 @@ df %>%
   theme(axis.title = element_text(size = 14))
 
 ```
-
