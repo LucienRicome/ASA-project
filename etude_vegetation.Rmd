@@ -14,9 +14,8 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 
 # Introduction
 
-Une petite mise en contexte Ou se situe la plaine du Mafragh ?
-Quelle est la végétation associée ?
-Pourquoi relier sol et plantes est pertinent...
+La plaine du Mafragh est une entité géomorphologique au sud de la Mer Médirranée couvrant 15000 ha. La zone d'étude est répartie sur 10000ha de cette plaine. Des relevés pédologiques et d'abondance phytosociologiques ont été réalisé sur 97 sites. Les coordonnées GPS de chaque site sont connues. On se demande quelle sont les variables pédologiques qui structurent les communités végétales de la plaine du Mafragh.
+
 
 ## Chargement des packages
 
@@ -361,7 +360,7 @@ C'est notamment le cas de E51, E34 et E53 qui sont négativement corrélées à 
 
 Plusieurs espèces semblent négativement corrélées avec le second axe.
 C'est notamment le cas de E51, E39, E23 ou encore E40.
-D'autres espèces sont positivement corrélées sur cet même axe avec E34, E55 et un paquet regroupant E57, E21, E44 et E46.
+D'autres espèces sont positivement corrélées sur cet même axe avec E34, E55, E57, E21, E44 et E46.
 C'est sur cette axe que les espèces sont les plus dispersées.
 
 Nous faisons la même observation pour le score des variables environnementales.
@@ -370,6 +369,7 @@ Nous faisons la même observation pour le score des variables environnementales.
 L'altitude est fortement corrélée négativement au premier axe.
 Cette variable se trouve également négativement corrélée à K+.
 La capacité de rétention est fortement corrélée négativement au deuxième axe, tout comme Mg++ dans une moindre mesure.
+
 
 Les plots ci-dessous permettent d'illustrer nos précédent propos :
 
@@ -396,17 +396,22 @@ text(ccap_flo, dis="cn",col="black",cex = 1, scaling='sites')
 
 Une information ajoutée ici est la répartition des sites par la pCCA.
 Cela nous permet de voir que la répartition ressemble à celle des espèces avec l'axe 2 permettant principalement de séparer les sites.
-En effet, de nombreux sites sont corrélés négativement avec ce deuxième axe dont de nombreux compris entre 69 et 80.
-Les sites 95, 86 et 62 sont, eux, corrélés positivement avec cet axe.
+En effet, de nombreux sites sont corrélés négativement avec ce deuxième axe dont de nombreux compris entre 69 et 80. Ces derniers sont caractérisés par une forte abondance des espèces E51, E39, E23, E40 ainsi qu'une forte capacitée de rétention du sol.
+
+Les sites 95, 86 et 62 sont, eux, corrélés positivement avec cet axe. Ces derniers sont caractérisés par une forte abondance des espèces E34, E55, E57, E21, E44, E46 et une faible capacité de rétention du sol.
 
 Pour conclure sur cette partie, nous cherchions à observer si l'environnement et plus précisément les caractères pédologiques du milieu pouvaient expliquer la répartition des espèces végétales retrouvées sur la zone d'étude.
 
-Pour cela, nous avons tout d'abord vérifier qu'aucune autocorrélation spatiales n'entrait en jeu (Mansel test) ce qui était cependant le cas.
+Pour cela, nous avons tout d'abord vérifier qu'aucune autocorrélation spatiales n'entrait en jeu (Mantel test) ce qui était cependant le cas.
 
-Nous avons donc dû nous tourner est une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
+Nous avons donc dû nous tourner vers une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
 La projection des axes canoniques montre quels sont les paramètres environnementaux qui déterminent l'abondance des espèces après l'analyse et le retrait de l'effet de la dépendance spatiale.
 
+
+
 Conclure sur les effets des var envir sur l'abondance des espèces et les sites... infos au dessus
+
+
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
 
