@@ -474,10 +474,12 @@ Avec $\beta_{0}$ est l'intercept, $\beta_{1}$ est le coefficient d'altitude, $\b
 ## Prédictions
 
 ```{r }
-proba = predict(model_final, newdata = data.frame(asso.selected.no.sand), type="class")
+proba = predict(model_final, newdata = data.frame(asso.selected.no.sand), type="class") #(A)
 confusion = table(association$association,proba,dnn=list("Observed","Predicted"))
-confusion
+confusion #(B)
 
+accuracy= mean(proba==association$association) #(C)
+accuracy
 
 df = as.data.frame(confusion)
 
@@ -492,3 +494,9 @@ df %>%
   theme(axis.title = element_text(size = 14))
 
 ```
+
+Ci-dessus, nous vérifions notre modèle en prédisant sur les mêmes données (A).
+Partitionner des données pour ne pas prédire avec les mêmes données était ici difficile au vue du nombre de données disponibles.
+
+Ensuite, nous réalisons une matrice de confusion afin de visualiser les résultats de nos prédictions et donc de notre modèle.
+(B)
