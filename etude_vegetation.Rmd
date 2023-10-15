@@ -469,7 +469,7 @@ df %>%
   coord_fixed()+
   theme_minimal()+
   theme(axis.text = element_text(size = 12))+
-  theme(axis.title = element_text(size = 14))
+  theme(axis.title = element_text(size = 14)) 
 
 ```
 
