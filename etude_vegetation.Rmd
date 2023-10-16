@@ -159,7 +159,7 @@ La transformation par Helliger était donc nécessaire.
 ```{r}
 M <- cor(mil)
 par(mfrow=c(1,1))
-corrplot(M, method = "number")
+corrplot(M, method = "number", number.cex = 0.8)
 
 # Pheatmap des corrélations
 
