@@ -14,8 +14,11 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 
 ## Introduction
 
-La plaine du Mafragh est une entité géomorphologique au sud de la Mer Médirranée couvrant 15000 ha. La zone d'étude est répartie sur 10000ha de cette plaine. Des relevés pédologiques et d'abondance phytosociologiques ont été réalisé sur 97 sites. Les coordonnées GPS de chaque site sont connues. On se demande quelle sont les variables pédologiques qui structurent les communités végétales de la plaine du Mafragh.
-
+La plaine du Mafragh est une entité géomorphologique au sud de la Mer Médirranée couvrant 15000 ha.
+La zone d'étude est répartie sur 10000ha de cette plaine.
+Des relevés pédologiques et d'abondance phytosociologiques ont été réalisé sur 97 sites.
+Les coordonnées GPS de chaque site sont connues.
+On se demande quelle sont les variables pédologiques qui structurent les communités végétales de la plaine du Mafragh.
 
 ## Chargement des packages
 
@@ -116,8 +119,7 @@ veg.tri
 
 #Distance
 veg.dnear<-dnearneigh(as.matrix(coord),0,30) #here we specify that ponds are connected if they are appart from less than 30m
-# graphic representation:
-#s.label(coord,clabel=0.6, cpoint=1,neig=nb2neig(veg.dnear))
+
 # synthetic view:
 veg.dnear #in that specific case: the ponds 4 and 31 are not connected to any other pond
 
@@ -348,11 +350,11 @@ Premièrement, nous observons le score des espèces végétales pour chaque axe.
 
 Sur le premier axe, une majorité d'espèce se retrouve en -2 et 2.
 Seules quelques espèces semblent se détacher.
-C'est notamment le cas de E51, E34 et E53 qui sont négativement corrélées à l'axe 1 alors que E56 est quant à elle positivement corrélée à cet axe.
+C'est notamment le cas de *Narcissus pseudo-narcissus* (E51), *Beta vulgaris ssp. maritima* (E34) et *Leotondon tuberosus* (E53) qui sont négativement corrélées à l'axe 1 alors que *Lolium multiflorum* (E56) est quant à elle positivement corrélée à cet axe.
 
 Plusieurs espèces semblent négativement corrélées avec le second axe.
-C'est notamment le cas de E51, E39, E23 ou encore E40.
-D'autres espèces sont positivement corrélées sur cet même axe avec E34, E55, E57, E21, E44 et E46.
+C'est notamment le cas de *Narcissus pseudo-narcissus* (E51), *Hedysarum coronarium* (E39), *Urginea maritima* (E23) ou encore *Convolvulus arvensis* (E40).
+D'autres espèces sont positivement corrélées sur cet même axe avec *Beta vulgaris ssp. maritima* (E34), *Lythrum tribracteatum* (E55), *Cynodon dactylon* (E57), *Centaurium spicatum* (E21), *Rumex Acetosella ssp. angiocarpus* (E44) et *Diplotaxis erucoides* (E46).
 C'est sur cette axe que les espèces sont les plus dispersées.
 
 Nous faisons la même observation pour le score des variables environnementales.
@@ -361,7 +363,6 @@ Nous faisons la même observation pour le score des variables environnementales.
 L'altitude est fortement corrélée négativement au premier axe.
 Cette variable se trouve également négativement corrélée à K+.
 La capacité de rétention est fortement corrélée négativement au deuxième axe, tout comme Mg++ dans une moindre mesure.
-
 
 Les représentations graphiques ci-dessous permettent d'illustrer nos précédent propos :
 
@@ -388,9 +389,11 @@ text(ccap_flo, dis="cn",col="black",cex = 1, scaling='sites')
 
 Une information ajoutée ici est la répartition des sites par la pCCA.
 Cela nous permet de voir que la répartition ressemble à celle des espèces avec l'axe 2 permettant principalement de séparer les sites.
-En effet, de nombreux sites sont corrélés négativement avec ce deuxième axe dont de nombreux compris entre 69 et 80. Ces derniers sont caractérisés par une forte abondance des espèces E51, E39, E23, E40 ainsi qu'une forte capacitée de rétention du sol.
+En effet, de nombreux sites sont corrélés négativement avec ce deuxième axe dont de nombreux compris entre 69 et 80.
+Ces derniers sont caractérisés par une forte abondance des espèces *Narcissus pseudo-narcissus* (E51), *Hedysarum coronarium* (E39), *Urginea maritima* (E23), *Convolvulus arvensis* (E40) ainsi qu'une forte capacitée de rétention du sol.
 
-Les sites 95, 86 et 62 sont, eux, corrélés positivement avec cet axe. Ces derniers sont caractérisés par une forte abondance des espèces E34, E55, E57, E21, E44, E46 et une faible capacité de rétention du sol.
+Les sites 95, 86 et 62 sont, eux, corrélés positivement avec cet axe.
+Ces derniers sont caractérisés par une forte abondance des espèces *Beta vulgaris ssp. maritima* (E34), *Lythrum tribracteatum* (E55), *Cynodon dactylon* (E57), *Centaurium spicatum* (E21), *Rumex Acetosella ssp. angiocarpus* (E44) et *Diplotaxis erucoides* (E46) et une faible capacité de rétention du sol.
 
 Pour conclure sur cette partie, nous cherchions à observer si l'environnement et plus précisément les caractères pédologiques du milieu pouvaient expliquer la répartition des espèces végétales retrouvées sur la zone d'étude.
 
@@ -399,9 +402,8 @@ Pour cela, nous avons tout d'abord vérifier qu'aucune autocorrélation spatiale
 Nous avons donc dû nous tourner vers une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
 La projection des axes canoniques montre quels sont les paramètres environnementaux qui déterminent l'abondance des espèces après l'analyse et le retrait de l'effet de la dépendance spatiale.
 
-
-Ainsi, les variables infulant sur la distribution des espèces floristique sont l'altitude et la capacité de rétention en eau mais également la concentration en ions K+ et Mg++. Ces quatre variables n'étant corrélées à aucune autre, nous pouvons conclure qu'elles sont seules responsable de la répartition floristique.
-
+Ainsi, les variables infulant sur la distribution des espèces floristique sont l'altitude et la capacité de rétention en eau mais également la concentration en ions K+ et Mg++.
+Ces quatre variables n'étant corrélées à aucune autre, nous pouvons conclure qu'elles sont seules responsable de la répartition floristique.
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
 
@@ -494,5 +496,4 @@ Ci-dessus, nous vérifions notre modèle en prédisant sur les mêmes données (
 Partitionner des données pour ne pas prédire avec les mêmes données était ici difficile au vue du nombre de données disponibles.
 
 Ensuite, nous réalisons une matrice de confusion afin de visualiser les résultats de nos prédictions et donc de notre modèle.
-(B)
-Celui-ci a une accuracy de 0.54, il prédit donc correctement une fois sur deux.
+(B) Celui-ci a une accuracy de 0.54, il prédit donc correctement une fois sur deux.
