@@ -14,11 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 
 ## Introduction
 
-La plaine du Mafragh est une entité géomorphologique au sud de la Mer Médirranée couvrant 15000 ha.
-La zone d'étude est répartie sur 10000ha de cette plaine.
-Des relevés pédologiques et d'abondance phytosociologiques ont été réalisé sur 97 sites.
-Les coordonnées GPS de chaque site sont connues.
-On se demande quelle sont les variables pédologiques qui structurent les communités végétales de la plaine du Mafragh.
+La plaine du Mafragh est une entité géomorphologique au Sud de la Mer Méditerranée couvrant 15 000 ha. La zone d'étude est répartie sur 10 000 ha de cette plaine. Des relevés pédologiques et d'abondance phytosociologiques ont été réalisés sur 97 sites. Les coordonnées GPS de chaque site sont connues. On se demande quelles sont les variables pédologiques qui structurent les communautés végétales de la plaine du Mafragh.
 
 ## Chargement des packages
 
@@ -42,7 +38,6 @@ library(factoextra)
 library(corrplot)
 #library(RVAideMemoire)
 library(PerformanceAnalytics)
-library(readxl)
 
 require(questionr)
 require(nnet)
@@ -66,7 +61,7 @@ flo_mil = cbind(flo, mil)
 
 Nous récupérons ici le jeu de données afin de réaliser l'analyse.\
 
-Nous créons quatre data.frames afin d'obtenir les différents tableaux nécessaires à l'analyse :
+Nous créons 4 data.frames afin d'obtenir les différents tableaux nécessaires à l'analyse :
 
 -   "flo" = tableau d'abondance des espèces végétales par site (tableau de contingence)
 
@@ -74,7 +69,7 @@ Nous créons quatre data.frames afin d'obtenir les différents tableaux nécessa
 
 -   "coord" = coordonnées GPS des différents sites
 
--   "association" = zonage du mileu d'étude en fonction d'associations végétales (variable qualitative)
+-   "association" = zonage du milieu d'étude en fonction d'associations végétales (variable qualitative)
 
 # Exploration du jeu de données
 
@@ -87,13 +82,14 @@ coord.knear4 = knearneigh(as.matrix(coord),4) #(A)
 knn2nb(coord.knear4)
 plot(knn2nb(coord.knear4), coord, add=TRUE) #(B)
 
-
-ade4::s.label(coord, ylim=c(min(coord[,1])-50, max(coord[,1])+50) ,xlim=c(min(coord[,2])-50,max(coord[,2])+50),  clabel=0.6,cpoint=1,neig=nb2neig(knn2nb(coord.knear4)))
+ade4::s.label(coord, ylim=c(min(coord[,1])-50, max(coord[,1])+50),
+                     xlim=c(min(coord[,2])-50, max(coord[,2])+50),
+                     clabel=0.6, cpoint=1, neig=nb2neig(knn2nb(coord.knear4)))
 ```
 
-Ci-dessous, nous commençons à parcourir les données en étudiant les coordonnées géographiques des différents sites.
+Ci-dessus, nous commençons à parcourir les données en étudiant les coordonnées géographiques des différents sites.
 
-Le graphique permet d'observer la répartition des points et aucune configuration régulière ne se détache (ex : rook, queen, etc.)
+Le plot permet d'observer la répartition des points et aucune configuration régulière ne se détache (ex : root, queen, etc.)
 
 Nous décidons d'étudier la répartition des points par l'étude de leur quatre plus proches voisins.
 Pour cela nous extrayons les voisins (A), puis nous vérifions que les 97 sites sont dotés de quatre voisins ce qui est le cas puisque le nombre de lien est bien de 388 (97\*4)
@@ -134,8 +130,10 @@ s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
 ### Test et standardization
 
 Avant de commencer l'analyse, il s'agit de tester l'homogénéité de la variance avec le test de Bartlett.
+
 Les données sont ensuite standardizées de la façon suivante : La transformation d'Hellinger est appliquée aux données floristiques.
 Cela permet notamment de pallier le problème de l'écart d'abondance entre plusieurs espèces.
+
 Les données pédologique (mil) sont centrées et réduite car les unités des variables ne sont pas identiques.
 
 ```{r}
@@ -183,7 +181,7 @@ Il s'agira de vérifier s'il reste des corrélations dans les variables qui sero
 
 ```{r}
 M <- cor(flo)
-corrplot(M, method = "number",type="upper")
+corrplot(M, method = "number", type="upper")
 ```
 
 Il n'y a pas de corrélation entre les différentes espèces.
@@ -402,8 +400,8 @@ Pour cela, nous avons tout d'abord vérifier qu'aucune autocorrélation spatiale
 Nous avons donc dû nous tourner vers une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
 La projection des axes canoniques montre quels sont les paramètres environnementaux qui déterminent l'abondance des espèces après l'analyse et le retrait de l'effet de la dépendance spatiale.
 
-Ainsi, les variables infulant sur la distribution des espèces floristique sont l'altitude et la capacité de rétention en eau mais également la concentration en ions K+ et Mg++.
-Ces quatre variables n'étant corrélées à aucune autre, nous pouvons conclure qu'elles sont seules responsable de la répartition floristique.
+Ainsi, les variables influçant sur la distribution des espèces floristique sont l'altitude et la capacité de rétention en eau mais également la concentration en ions K+ et Mg++. Ces quatre variables n'étant corrélées à aucune autre, nous pouvons conclure qu'elles sont seules responsable de la répartition floristique.
+
 
 # Création d'un modèle à vocation prédictive pour la classe de Association
 
@@ -419,7 +417,6 @@ model = step(asso, direction = "both", scope = formula(asso.mlogit)) #(C)
 
 Le but est de créer tout d'abord le modèle le plus complet possible avec l'ensemble des variables explicatives.
 (A) Puis le modèle nul, c'est-à-dire sans variable explicative.
-(B)
 
 Grace à la selection du meilleur modèle, obtenu en minimisant l'AIC, on s'arrête sur les variables K+, Altitude, Capa_Reten et Sable.
 (B)
@@ -455,9 +452,7 @@ vif(model_final) #(c)
 
 Nous enlevons donc ci-dessus la variable.
 (A) Puis nous refaisons le modèle avec les trois variables restantes.
-(B)
-
-Désormais, mode_final ne présentente pas de soucis de multicollinéarité.
+(B) Désormais, mode_final ne présentente pas de soucis de multicollinéarité.
 (C) Nous allons l'utiliser pour réaliser de la prédiction de classe.
 
 Le modèle peut être représenté par un système de 6 équations batties comme la suivante, avec i variant entre 2 et 7.
