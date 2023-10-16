@@ -1,7 +1,7 @@
 ---
 title: "Etude de la végétation de Mafragh"
 author: "Aldric, Baptiste, Jeanne, Lucien, Lucile"
-date: '2023-10-05'
+date: "2023-10-05"
 output:
   html_document:
     df_print: paged
@@ -127,7 +127,7 @@ H0 correspond à la situation d'homogénité des variances et la p-value ici est
 ```{r}
 M <- cor(mil)
 par(mfrow=c(1,1))
-corrplot(M, method = "number")
+corrplot(M, method = "number", number.cex = 0.8)
 
 # Heatmap des corrélations
 
@@ -298,6 +298,7 @@ Les résultats de la pCCA sont significatifs (pvalue = 0.001).
 Cela signifie que notre pCCA ne peut pas être lié au hasard mais qu'il existe bien un lien entre nos différents tableaux.
 
 Nous pouvons maintenant nous intéresser aux résultats de notre pCCA :
+
 
 ```{r }
 ccap_flo$CCA$v #(A)
