@@ -1,10 +1,12 @@
 ---
 title: "Etude de la végétation de Mafragh"
 author: "Aldric, Baptiste, Jeanne, Lucien, Lucile"
-date: "2023-10-05"
-output: pdf_document
-editor_options: 
-  markdown: 
+date: '2023-10-05'
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  markdown:
     wrap: sentence
 ---
 
@@ -82,9 +84,7 @@ coord.knear4 = knearneigh(as.matrix(coord),4) #(A)
 knn2nb(coord.knear4)
 plot(knn2nb(coord.knear4), coord, add=TRUE) #(B)
 
-ade4::s.label(coord, ylim=c(min(coord[,1])-50, max(coord[,1])+50),
-                     xlim=c(min(coord[,2])-50, max(coord[,2])+50),
-                     clabel=0.6, cpoint=1, neig=nb2neig(knn2nb(coord.knear4)))
+ade4::s.label(coord, clabel=0.6, cpoint=1, neig=nb2neig(knn2nb(coord.knear4)))
 ```
 
 Ci-dessus, nous commençons à parcourir les données en étudiant les coordonnées géographiques des différents sites.
@@ -92,38 +92,9 @@ Ci-dessus, nous commençons à parcourir les données en étudiant les coordonn�
 Le plot permet d'observer la répartition des points et aucune configuration régulière ne se détache (ex : root, queen, etc.)
 
 Nous décidons d'étudier la répartition des points par l'étude de leur quatre plus proches voisins.
-Pour cela nous extrayons les voisins (A), puis nous vérifions que les 97 sites sont dotés de quatre voisins ce qui est le cas puisque le nombre de lien est bien de 388 (97\*4)
+Pour cela nous extrayons les voisins (A), puis nous vérifions que les 97 sites sont dotés de voisins ce qui est le cas puisque le nombre de lien est bien de 388 (= 97*4).
 
 Nous réalisons ensuite un plot afin de voir comment les points sont reliés entre eux (B)
-
-##Représentation des voisins --\> on garde ou pas ?
-pas exploité par la suite...
-
-```{r}
-#Gabriel :
-
-veg.gab<-gabrielneigh(as.matrix(coord))
-# you can represent it spatially with this function:
-#s.label(coord,clabel=.5, cpoint=.1,neig=nb2neig(graph2nb(veg.gab)))
-
-#Delaunay :
-veg.tri<-tri2nb(coord)
-# graphic representation:
-#s.label(coord,clabel=0.6,cpoint=1,neig=nb2neig(veg.tri))
-# synthetic view:
-veg.tri
-
-#Distance
-veg.dnear<-dnearneigh(as.matrix(coord),0,30) #here we specify that ponds are connected if they are appart from less than 30m
-
-# synthetic view:
-veg.dnear #in that specific case: the ponds 4 and 31 are not connected to any other pond
-
-par(mfrow=c(1,3))
-s.label(coord,clabel=0, cpoint=.1,neig=nb2neig(graph2nb(veg.gab))) 
-s.label(coord,clabel=0,cpoint=1,neig=nb2neig(veg.tri))
-s.label(coord,clabel=0, cpoint=1,neig=nb2neig(veg.dnear))
-```
 
 ## Analyses préliminaires
 
@@ -142,13 +113,12 @@ bartlett.test(flo)
 barplot(table(unlist(flo)), xlab = "Abondances", ylab="nombre d'apparition", main="Distribution des données de comptage floristique", col="#00AFBB") # Distribution des abondances.
 
 #standardization methods : adapt to your own data
-flo_hel <- decostand(flo, "hellinger") #package vegan
-mil= as.data.frame(scale(mil, center=TRUE, scale=TRUE))
+flo <- decostand(flo, "hellinger") #package vegan
+mil = as.data.frame(scale(mil, center=TRUE, scale=TRUE))
 ```
 
-Le test de Barlett confirme que nous nous trouvons en situation d'homocédasticité.
-H0 correspond à la situation d'homogénité des variances et la p-value ici est inférieure à 2.2e-16 : rejet de H0\
-La transformation par Helliger était donc nécessaire.
+Le test de Barlett confirme que nous ne nous trouvons pas en situation d'homocédasticité.
+H0 correspond à la situation d'homogénité des variances et la p-value ici est inférieure à 2.2e-16 : rejet de H0, donc il faut stabiliser la variance avec une transformation d'Hellinger car nous sommes en situation d'hétérocédasticité.
 
 ### Etude de la corrélation entre variables
 
@@ -159,7 +129,7 @@ M <- cor(mil)
 par(mfrow=c(1,1))
 corrplot(M, method = "number")
 
-# Pheatmap des corrélations
+# Heatmap des corrélations
 
 heatmap(abs(cor(mil)), # corrélation de Pearson (note: ce sont des valeurs absolues!)
         col = rev(heat.colors(6)),
@@ -174,17 +144,17 @@ legend("topright",
 
 Il existe de rares corrélations entre variables, au seuil 0.7, Na+ est corrélé avec Conduct et Sable avec Argile.
 Ce résultat n'est pas surprenant, comme le limon, le sable et l'argile donnent la texture du sol, ces trois variables sont corrélées.
-Pour le moment, toutes les varibales sont concervées.
+De plus NA+ est ion contribuant à la conductivité du sol. Pour le moment, toutes les variables sont conservées.
 Il s'agira de vérifier s'il reste des corrélations dans les variables qui seront choisies lors de la création de modèle.
 
-#### Pour les données floristiques (utile ?)
+#### Pour les données floristiques
 
 ```{r}
 M <- cor(flo)
-corrplot(M, method = "number", type="upper")
+corrplot(M, method = "square", type="upper")
 ```
 
-Il n'y a pas de corrélation entre les différentes espèces.
+Localement, nous trouvons quelques associations mais il n'y a pas d'associations générales entre les différentes espèces.
 
 #### Etudes des corrélations entre les données floristiques et pédologiques
 
@@ -235,7 +205,7 @@ Cela est également visible en réalisant le plot sur le test de Mantel.
 
 # Etude statistique
 
-## Selection des variables pertinententes
+## Selection des variables pertinentes
 
 ```{r}
 
@@ -279,7 +249,7 @@ Nous récupérons donc les variables environnementales séléctionnées.
 
 On réalise un partitionnement de variance pour étudier comment est distribuée la variance du tableau de comptage floristique en fonction des caractéristiques pédologiques du milieu et des cordonnées géographiques.
 
-```{r }
+```{r}
 partion_var <- varpart(flo,mil,coord)
 plot(partion_var, bg=2:5, Xnames = c("Spatial", "Paramètres \n environnementaux"))
 
@@ -330,13 +300,6 @@ Cela signifie que notre pCCA ne peut pas être lié au hasard mais qu'il existe 
 Nous pouvons maintenant nous intéresser aux résultats de notre pCCA :
 
 ```{r }
-summary(ccap_flo)
-```
-
-Ce tableau devient vite illisible et le nombre d'information est très importante.
-Décomposons donc les différents résultats :
-
-```{r }
 ccap_flo$CCA$v #(A)
 
 
@@ -367,22 +330,21 @@ Les représentations graphiques ci-dessous permettent d'illustrer nos précéden
 ```{r }
 #plot the pCCA
 par(mfrow=c(1,2))
-plot(ccap_flo,scaling=1)
-plot(ccap_flo,scaling=2)
+plot(ccap_flo, scaling=1, xlab="4% of total variance", ylab="2% of total variance")
+plot(ccap_flo, scaling=2, xlab="4% of total variance", ylab="2% of total variance")
 
 par(mfrow=c(1,1))
-plot(ccap_flo, type="n", main="Environmental variables")
+plot(ccap_flo, type="n", main="Environmental variables", xlab="4% of total variance", ylab="2% of total variance")
 text(ccap_flo, col="blue",cex = 0.75)
 text(ccap_flo, dis="cn",col="black",cex = 1.2)
 
-plot(ccap_flo, type="n", main="Environmental variables & species", scaling=1)
+plot(ccap_flo, type="n", main="Environmental variables & species", xlab="4% of total variance", ylab="2% of total variance", scaling=1)
 text(ccap_flo, "species", col="blue", cex=0.8, scaling=1)
 text(ccap_flo, dis="cn",col="black",cex = 1, scaling=1)
 
-plot(ccap_flo, type="n", main="Environmental variables & sites")
+plot(ccap_flo, type="n", main="Environmental variables & sites", xlab="4% of total variance", ylab="2% of total variance")
 text(ccap_flo$CCA$wa, col='red')
 text(ccap_flo, dis="cn",col="black",cex = 1, scaling='sites')
-
 ```
 
 Une information ajoutée ici est la répartition des sites par la pCCA.
@@ -395,9 +357,7 @@ Ces derniers sont caractérisés par une forte abondance des espèces *Beta vulg
 
 Pour conclure sur cette partie, nous cherchions à observer si l'environnement et plus précisément les caractères pédologiques du milieu pouvaient expliquer la répartition des espèces végétales retrouvées sur la zone d'étude.
 
-Pour cela, nous avons tout d'abord vérifier qu'aucune autocorrélation spatiales n'entrait en jeu (Mantel test) ce qui était cependant le cas.
-
-Nous avons donc dû nous tourner vers une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
+Comme nous avons préalablement constaté une autocorrélation spatiale (Mantel Test), nous avons donc dû nous tourner vers une Analyse Partielle Canonique des Correspondances (pCCA) qui prend en compte la dépendance spatiale lors d'une analyse multivariée avec *a priori.* Pour cette analyse, nous avions trois tables comprenant l'abondance des espèces par site, les valeurs pédologiques par site, et les coordonnées géographiques des sites.
 La projection des axes canoniques montre quels sont les paramètres environnementaux qui déterminent l'abondance des espèces après l'analyse et le retrait de l'effet de la dépendance spatiale.
 
 Ainsi, les variables influçant sur la distribution des espèces floristique sont l'altitude et la capacité de rétention en eau mais également la concentration en ions K+ et Mg++. Ces quatre variables n'étant corrélées à aucune autre, nous pouvons conclure qu'elles sont seules responsable de la répartition floristique.
@@ -408,8 +368,8 @@ Ainsi, les variables influçant sur la distribution des espèces floristique son
 ## Séléction du meilleur modèle
 
 ```{r }
-asso.mlogit = multinom(association$association~.,mil) #(A)
-asso = multinom(association$association~1,mil) #(B)
+asso.mlogit = multinom(association$association~., mil) #(A)
+asso = multinom(association$association~1, mil) #(B)
 beta = coef(asso.mlogit)
 
 model = step(asso, direction = "both", scope = formula(asso.mlogit)) #(C)
